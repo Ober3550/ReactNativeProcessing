@@ -1,21 +1,77 @@
-import { StatusBar } from 'expo-status-bar';
-import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import React from "react";
+import { PanResponder, View, Text} from 'react-native'
+import { ProcessingView } from "expo-processing";
+import KeyEvent from 'react-native-keyevent';
+import {draw, setup, startNewGame as start, touch, untouch} from './sketch.js'
 
-export default function App() {
-  return (
-    <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
-  );
+// Scale 0.9 for web
+// Scale 3 for phone
+let scale = 0.9;
+let swapAxis = false;
+
+let width = 0;
+let height = 0;
+let touchX = 0;
+let touchY = 0;
+
+export default class App extends React.Component {
+    render() {
+        
+        return (
+        <View style={{flex: 1,backgroundColor: 'transparent'}}{...this.panResponder.panHandlers}>
+        <ProcessingView style={{ flex: 1 }} sketch={this._sketch} />
+        </View>
+        );
+    }
+
+    swap_xy = true;
+    
+    _sketch = p => {
+      p.setup = () =>{
+        if(swapAxis){
+          width = p.height;
+          height = p.width;
+        }else{
+          width  = p.width;
+          height = p.height;
+        }
+        setup(p, width, height, swapAxis);
+        start();
+      }
+      p.draw = () => {
+        draw(p);
+      };
+    };
+    
+    panResponder = PanResponder.create({
+        onStartShouldSetPanResponder: (event, gestureState) => true,
+        onStartShouldSetPanResponderCapture: (event, gestureState) => true,
+        onMoveShouldSetPanResponder: (event, gestureState) => false,
+        onMoveShouldSetPanResponderCapture: (event, gestureState) => false,
+        onPanResponderGrant: (event, gestureState) => {
+          if(swapAxis){
+            touchY = event.nativeEvent.locationX*scale;
+            touchX = event.nativeEvent.locationY*scale;
+          }else
+          {
+            touchX = event.nativeEvent.locationX*scale;
+            touchY = event.nativeEvent.locationY*scale;
+          }
+          touch(touchX,touchY);
+        },
+        onPanResponderMove: (event, gestureState) => {
+          if(swapAxis){
+            touchY = event.nativeEvent.locationX*scale;
+            touchX = event.nativeEvent.locationY*scale;
+          }else
+          {
+            touchX = event.nativeEvent.locationX*scale;
+            touchY = event.nativeEvent.locationY*scale;
+          }
+          touch(touchX,touchY);
+        },
+        onPanResponderRelease: (event, gestureState) => {
+          untouch();
+        },
+    });
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
